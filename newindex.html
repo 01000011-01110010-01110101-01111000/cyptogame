@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Plane and Moving Box</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #storage {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: white;
+        }
+        #storageCount {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: white;
+        }
+
+        #seedCount {
+            position: absolute;
+            top: 20px;
+            right: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://threejs.org/build/three.js"></script>
+    <script>
+        // Set up the scene, camera, and renderer.
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Create the green plane.
+        const planeGeometry = new THREE.PlaneGeometry(5, 5, 32, 32);
+        const planeMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = Math.PI / 2;
+        scene.add(plane);
+
+        // Create the blue box with 0.1 dimensions.
+        const boxGeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+        const boxMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ff });
+        const box = new THREE.Mesh(boxGeometry, boxMaterial);
+        box.position.y = 0.05; // Lift the box above the plane
+        scene.add(box);
+
+        // Create the red box with 3 dimensions.
+        const redBoxGeometry = new THREE.BoxGeometry(1, 0.25, 1);
+        const redBoxMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000, opacity: 0.5, transparent: true });
+        const redBox = new THREE.Mesh(redBoxGeometry, redBoxMaterial);
+        redBox.position.x = 2;
+        redBox.position.y = 0;
+        redBox.position.z = -2;
+        scene.add(redBox);
+
+        // Create the point light with a larger distance and intensity.
+        const light = new THREE.PointLight(0xffffff, 1, 5);
+        light.position.set(0, 3, 0);
+        scene.add(light);
+
+        // Create a smaller point light and attach it to the box.
+        const boxLight = new THREE.PointLight(0xffffff, 1, 2);
+        box.add(boxLight);
+
+        // Add ambient light to the scene
+        const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
+        scene.add(ambientLight);
+
+        // Set initial camera position.
+        camera.position.z = 5;
+        camera.position.y = 5;
+
+        // Create a Raycaster and a mouse vector for capturing mouse coordinates
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // The target where box should move towards
+        const target = new THREE.Vector3();
+
+        // An array to hold growing boxes
+        const growingBoxes = [];
+
+        // An array to hold stored boxes
+        const storageBoxes = [];
+
+
+        // Create the storage text element
+        const storageText = document.createElement('div');
+        storageText.id = 'storage';
+        document.body.appendChild(storageText);
+
+        // Create the storage count element
+        const storageCountText = document.createElement('div');
+        storageCountText.id = 'storageCount';
+
+        // Retrieve the storage count from localStorage if available
+        let storageCount = localStorage.getItem('storageCount');
+        if (storageCount) {
+            storageBoxes.length = Number(storageCount);
+            storageCountText.innerHTML = 'Wheat Storage: ' + storageCount;
+        } else {
+            storageCountText.innerHTML = 'Wheat Storage: 0';
+        }
+
+        document.body.appendChild(storageCountText);
+
+        // On mouse move, update the mouse x and y coordinates
+        window.addEventListener('mousemove', function (event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        }, false);
+
+        // On "g" key press, create a new growing box at the position of the blue box
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 'g' && !isInsideRedBox()) {
+                const growingBoxGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.01);
+                const growingBoxMaterial = new THREE.MeshPhongMaterial({ color: 0xffff00 });
+                const growingBox = new THREE.Mesh(growingBoxGeometry, growingBoxMaterial);
+                growingBox.position.copy(box.position);
+                scene.add(growingBox);
+                growingBoxes.push(growingBox);
+            }
+        }, false);
+
+        let isCollided = false; // Flag to track collision status
+
+        // Function to check for collisions between the blue box and growing boxes
+        function checkCollisions() {
+            if (!isCollided) {
+                for (let i = 0; i < growingBoxes.length; i++) {
+                    const growingBox = growingBoxes[i];
+                    if (box.position.distanceTo(growingBox.position) < 0.1 && growingBox.scale.x >= 0.05) {
+                        // Collision detected with a fully grown box
+                        isCollided = true;
+                        storageText.innerHTML = 'Press S to store';
+                        seedText.innerHTML = 'Press C to Collect seeds';
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Event listener for the "s" key to store the collided box
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 's' && isCollided) {
+                const collidedBox = growingBoxes.find(growingBox => box.position.distanceTo(growingBox.position) < 0.1 && growingBox.scale.x >= 0.05);
+                if (collidedBox) {
+                    scene.remove(collidedBox);
+                    growingBoxes.splice(growingBoxes.indexOf(collidedBox), 1);
+                    storageBoxes.push(collidedBox);
+                    storageCount = storageBoxes.length;
+                    localStorage.setItem('storageCount', storageCount);
+                    updateStorageCount();
+                    storageText.innerHTML = '';
+                    isCollided = false;
+                }
+            }
+        });
+
+        // Event listener for the "p" key to delete the storage
+        window.addEventListener('keydown', function (event) {
+            if (event.key === 'p') {
+                localStorage.removeItem('storageCount');
+                storageBoxes.length = 0;
+                storageCount = 0;
+                updateStorageCount();
+            }
+        });
+
+        // Update the storage count display
+        function updateStorageCount() {
+            storageCountText.innerHTML = 'Storage: ' + storageCount;
+        }
+
+        // Function to check if the blue box is inside the red box
+        function isInsideRedBox() {
+            return (
+                box.position.x >= redBox.position.x - redBox.scale.x / 2 &&
+                box.position.x <= redBox.position.x + redBox.scale.x / 2 &&
+                box.position.y >= redBox.position.y - redBox.scale.y / 2 &&
+                box.position.y <= redBox.position.y + redBox.scale.y / 2 &&
+                box.position.z >= redBox.position.z - redBox.scale.z / 2 &&
+                box.position.z <= redBox.position.z + redBox.scale.z / 2
+            );
+        }
+
+        // Create the animation.
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update the raycaster direction
+            raycaster.setFromCamera(mouse, camera);
+
+            // Calculate objects intersecting the picking ray
+            const intersects = raycaster.intersectObjects(scene.children);
+
+            let isMouseOverBox = false;
+
+            for (let i = 0; i < intersects.length; i++) {
+                if (intersects[i].object === box) {
+                    isMouseOverBox = true;
+                } else if (intersects[i].object === plane && !isMouseOverBox) {
+                    // Set the target to the intersect point only if the mouse is not over the box
+                    target.copy(intersects[i].point);
+                }
+            }
+
+            // Calculate the vector from box to target
+            const direction = new THREE.Vector3().subVectors(target, box.position).normalize();
+
+            // Apply a fraction of the direction vector to the box's current position
+            box.position.x += direction.x * 0.01;
+            box.position.z += direction.z * 0.01;
+
+            // Make camera follow the box in 3D space and look down at the box.
+            camera.position.x = box.position.x;
+            camera.position.y = box.position.y + 1;
+            camera.position.z = box.position.z + 1;
+            camera.lookAt(box.position);
+
+            // Update the size of each growing box
+            for (let i = 0; i < growingBoxes.length; i++) {
+                const growingBox = growingBoxes[i];
+                if (growingBox.scale.x < 5) {
+                    growingBox.scale.multiplyScalar(1.01);
+                    growingBox.position.y = 0.05;
+                }
+            }
+
+            // Check for collisions between the blue box and growing boxes
+            checkCollisions();
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+    </script>
+</body>
+</html>

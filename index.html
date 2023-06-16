@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cryptacrop start menu</title>
+    <style>
+      body {
+        font-family: Lucida Console, monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: rgb(251, 251, 0);
+        transition-property: background-color;
+        transition-duration: 0.5s;
+        transition-timing-function: ease;
+      }
+
+      .animate-body {
+        background-color: #af2525;
+      }
+
+      .fade-out {
+        animation-name: fadeOut;
+        animation-duration: 1s;
+        animation-timing-function: ease;
+        animation-fill-mode: forwards;
+        animation-iteration-count: 1;
+        animation-direction: normal;
+      }
+
+      .fade-in {
+        animation: fadeOut 1s ease 1 backwards forwards;
+      }
+
+      .heading-1,
+      .heading-2,
+      .construction-button {
+        opacity: 1;
+        transition: opacity 1s ease;
+      }
+
+      .fade-out .heading-1,
+      .fade-out .heading-2,
+      .fade-out .construction-button {
+        opacity: 0;
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
+
+
+      .heading-1 {
+        font-size: 50px;
+        text-align: center;
+      }
+
+      .heading-2 {
+        font-size: 20px;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .right-slide.animate {
+        animation-name: Rightslide;
+      }
+
+      .left-slide.animate {
+        animation-name: Leftslide;
+      }
+
+      .highlight {
+        display: inline-block;
+        padding: 2px 4px;
+        background-color: #f3a132;
+        border: 2px solid black;
+        border-radius: 4px;
+      }
+
+      @keyframes Rightslide {
+        from {
+          transform: translateX(-1000px);
+        }
+        to {
+          transform: translateX(0px);
+        }
+      }
+
+      @keyframes Leftslide {
+        from {
+          transform: translateX(1000px);
+        }
+        to {
+          transform: translateX(0px);
+        }
+      }
+
+      .btn {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .construction-button {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 10%;
+  transform: translate(-50%, -35%);
+  margin: 0; /* Remove auto margin */
+  padding: 0; /* Adjust padding as needed */
+  width: 320px; /* Set width */
+  height: 140px; /* Set height */
+  font-size: 15px;
+  font-family: 'Verdana', sans-serif;
+  font-weight: bold;
+  background-color: rgb(255, 255, 255);
+  color: #000000;
+  border: solid;
+  border-radius: 4px;
+  cursor: pointer;
+  transition-property: transform, border, width, height;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+  transition-delay: 0s;
+}
+
+
+      .construction-button:hover {
+        border: 5px solid black;
+        opacity: 50%;
+        border-radius: 4px;
+        background-color: #af2525;
+        width: 330px; /* Set width */
+        height: 150px; /* Set height */
+      }
+
+      /* Overlay */
+      #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #f3a132;
+        transform: translateX(100%);
+        z-index: 999;
+        transition-property: transform;
+        transition-duration: 0.5s;
+        transition-timing-function: ease;
+      }
+
+      /* Hide overflow for the overlay */
+      #overlay.hidden {
+        overflow: hidden;
+      }
+      .fade-out {
+  animation: fadeOut 1s ease-out forwards;
+}
+
+
+.wheat-v {
+  position: absolute;
+  font-family: 'Arial', Courier, monospace;
+  font-size: 20px;
+  color: rgb(255, 166, 0);
+  transition: all 0.5s ease-in-out; /* This will smoothly transition the wheat-v's position */
+  opacity: 1;
+  animation: fadeIn 1s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.wheat-v::before {
+  content: 'V';
+  display: inline-block;
+  margin-right: 4px;
+}
+
+    </style>
+  </head>
+  <body>
+    <section>
+      <h1 class="heading-1">Cryptacrop</h1>
+      <h2 class="heading-2 right-slide">
+        <span class="highlight">
+          <span id="dynamic-word-span">DESTROY</span>
+        </span>
+        With Wheat!
+      </h2>
+      <button id="navigate-button" class="construction-button">     </button>
+    </section>
+
+    <div id="overlay" class="hidden"></div>
+
+    <script>
+      const words = ["DESTROY", "PLANT", "BUILD", "TRADE", "STORE", "SELL"]; // Array of different words
+      const wordSpan = document.getElementById("dynamic-word-span"); // Span element to hold the dynamic word
+      let index = 0; // Index to keep track of the current word
+
+      // Function to swap out the word in the heading with the next word from the array
+      function swapWord() {
+        const heading2 = document.querySelector(".heading-2");
+
+        setTimeout(() => {
+          wordSpan.textContent = words[index];
+          index = (index + 1) % words.length;
+        }, 1000);
+      }
+
+      // Call the swapWord function every 2 seconds (adjust the interval as desired)
+      setInterval(swapWord, 2000);
+
+      const navigateButton = document.getElementById("navigate-button");
+
+      navigateButton.addEventListener("click", () => {
+        const elementsToFadeOut = document.querySelectorAll(".heading-1, .heading-2, .construction-button");
+
+        elementsToFadeOut.forEach((element) => {
+          element.classList.add("fade-out");
+        });
+
+        const body = document.body;
+        body.classList.add("animate-body");
+
+        setTimeout(() => {
+          window.location.href = "newindex.html";
+        }, 1000);
+      });
+    </script>
+
+    <!-- Add wheat V shapes -->
+    <script>
+  // Randomly position the wheat V shapes
+  // Create and append 25 wheat V shapes with randomized positions
+  for (let i = 0; i < 75; i++) {
+    const wheatV = document.createElement("div");
+    wheatV.classList.add("wheat-v");
+    setRandomPosition(wheatV);
+    document.body.appendChild(wheatV);
+
+    // Start initial fade in immediately
+    fadeInShape(wheatV);
+
+    // Schedule fade in and out at random intervals (between 4 and 8 seconds here)
+    setInterval(() => {
+      setTimeout(() => {
+        fadeOutShape(wheatV);
+      }, Math.random() * 2000 + 2000);
+
+      setTimeout(() => {
+        fadeInShape(wheatV);
+      }, Math.random() * 4000 + 4000);
+    }, Math.random() * 4000 + 4000);
+  }
+
+// Function to set random position for a given element
+function setRandomPosition(element) {
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
+
+  let posX, posY;
+
+  while (true) {
+    posX = Math.random() * screenWidth;
+    posY = Math.random() * screenHeight;
+
+    // Check if the chosen position is outside the center cell of the 3x3 grid
+    if ((posX < screenWidth / 3 || posX > screenWidth * 2 / 3) || (posY < screenHeight / 3 || posY > screenHeight * 2 / 3)) {
+      break;
+    }
+  }
+
+  element.style.left = `${posX}px`;
+  element.style.top = `${posY}px`;
+}
+
+  // Function to fade out a shape
+  function fadeOutShape(shape) {
+    shape.classList.add("fade-out");
+  }
+
+  // Function to fade in a shape
+  function fadeInShape(shape) {
+    shape.classList.remove("fade-out");
+    setRandomPosition(shape);
+  }
+
+    </script>
+  </body>
+</html>
+
